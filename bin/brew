@@ -10,6 +10,9 @@ HOMEBREW_BREW_FILE = ENV['HOMEBREW_BREW_FILE'] = File.expand_path(__FILE__)
 require 'pathname'
 HOMEBREW_LIBRARY_PATH = (Pathname.new(__FILE__).realpath.dirname.parent+"Library"+"Homebrew").to_s
 $:.unshift(HOMEBREW_LIBRARY_PATH)
+
+require 'platform'
+PlatformFactory.setup
 require 'global'
 
 case ARGV.first
@@ -37,16 +40,11 @@ case HOMEBREW_PREFIX.to_s when '/', '/usr'
   # it may work, but I only see pain this route and don't want to support it
   abort "Cowardly refusing to continue at this prefix: #{HOMEBREW_PREFIX}"
 end
-if MACOS_VERSION < 10.5
-  abort "Homebrew requires Leopard or higher, but you could fork it and fix that..."
-end
 
 def dump_config
   require 'hardware'
   bits = Hardware.bits
   cores = Hardware.cores_as_words
-  llvm = llvm_build
-  gcc = gcc_build
   sha = `cd #{HOMEBREW_REPOSITORY} && git rev-parse --verify HEAD 2> /dev/null`.chomp
   kernel_arch = `uname -m`.chomp
 
@@ -59,13 +57,11 @@ HOMEBREW_CACHE: #{HOMEBREW_CACHE}
 HOMEBREW_REPOSITORY: #{HOMEBREW_REPOSITORY}
 HOMEBREW_LIBRARY_PATH: #{HOMEBREW_LIBRARY_PATH}
 Hardware: #{cores}-core #{bits}-bit #{Hardware.intel_family}
-OS X: #{MACOS_FULL_VERSION}
+Platform: #{Platform.identifier}
 Kernel Architecture: #{kernel_arch}
 Ruby: #{RUBY_VERSION}-#{RUBY_PATCHLEVEL}
-GCC-4.2: #{gcc ? "build #{gcc}" : "N/A"} (5577 or newer recommended)
-LLVM: #{llvm ? "build #{llvm}" : "N/A" } #{llvm ? "(2206 or newer recommended)" : "" }
-MacPorts or Fink? #{macports_or_fink_installed?}
-X11 installed? #{x11_installed?}
+--- Platform specific:
+#{Platform.dump}
 EOS
 end
 
@@ -105,8 +101,6 @@ begin
       end
 
     when 'search', '-S'
-      check_for_blacklisted_formula(ARGV.named)
-
       require "formula"
       formulae = Formulary.names with_aliases=true
 
@@ -225,8 +219,6 @@ begin
     end
 
   when 'install'
-    check_for_blacklisted_formula(ARGV.named)
-    
     require 'formula_installer'
     require 'hardware'
 
@@ -239,23 +231,7 @@ begin
     raise "Cannot write to #{HOMEBREW_PREFIX}" unless HOMEBREW_PREFIX.writable?
 
     ################################################################# warnings
-    begin
-      if MACOS_VERSION >= 10.6
-        opoo "You should upgrade to Xcode 3.2.1" if llvm_build < 2206
-      else
-        opoo "You should upgrade to Xcode 3.1.4" if gcc_build < 5577
-      end
-    rescue
-      # the reason we don't abort is some formula don't require Xcode
-      # TODO allow formula to declare themselves as "not needing Xcode"
-      opoo "Xcode is not installed! Builds may fail!"
-    end
-
-    if macports_or_fink_installed?
-      opoo "It appears you have Macports or Fink installed"
-      puts "Although, unlikely, this can break builds or cause obscure runtime issues."
-      puts "If you experience problems try uninstalling these tools."
-    end
+    Platform.install_check
 
     ################################################################# install!
     installer = FormulaInstaller.new

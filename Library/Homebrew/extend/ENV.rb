@@ -44,57 +44,9 @@ module HomebrewEnvExtension
       ENV['CMAKE_PREFIX_PATH'] = "#{HOMEBREW_PREFIX}"
     end
 
-    if MACOS_VERSION >= 10.6 and (ENV['HOMEBREW_USE_LLVM'] or ARGV.include? '--use-llvm')
-      # you can install Xcode wherever you like you know.
-      prefix = `/usr/bin/xcode-select -print-path`.chomp
-      prefix = "/Developer" if prefix.to_s.empty?
-
-      ENV['CC'] = "#{prefix}/usr/bin/llvm-gcc"
-      ENV['CXX'] = "#{prefix}/usr/bin/llvm-g++"
-      cflags = %w{-O4} # link time optimisation baby!
-    else
-      cflags = ['-O3']
-    end
-
-    # in rare cases this may break your builds, as the tool for some reason wants
-    # to use a specific linker, however doing this in general causes formula to
-    # build more successfully because we are changing CC and many build systems
-    # don't react properly to that
-    ENV['LD'] = ENV['CC'] if ENV['CC']
-
-    # optimise all the way to eleven, references:
-    # http://en.gentoo-wiki.com/wiki/Safe_Cflags/Intel
-    # http://forums.mozillazine.org/viewtopic.php?f=12&t=577299
-    # http://gcc.gnu.org/onlinedocs/gcc-4.2.1/gcc/i386-and-x86_002d64-Options.html
-    # we don't set, eg. -msse3 because the march flag does that for us
-    #   http://gcc.gnu.org/onlinedocs/gcc-4.3.3/gcc/i386-and-x86_002d64-Options.html
-    if MACOS_VERSION >= 10.6
-      case Hardware.intel_family
-      when :nehalem, :penryn, :core2
-        # the 64 bit compiler adds -mfpmath=sse for us
-        cflags << "-march=core2"
-      when :core
-        cflags<<"-march=prescott"<<"-mfpmath=sse"
-      end
-      # gcc doesn't auto add msse4 or above (based on march flag) yet
-      case Hardware.intel_family
-      when :nehalem
-        cflags << "-msse4" # means msse4.2 and msse4.1
-      when :penryn
-        cflags << "-msse4.1"
-      end
-    else
-      # gcc 4.0 didn't support msse4
-      case Hardware.intel_family
-      when :nehalem, :penryn, :core2
-        cflags<<"-march=nocona"
-      when :core
-        cflags<<"-march=prescott"
-      end
-      cflags<<"-mfpmath=sse"
-    end
-
-    ENV['CFLAGS'] = ENV['CXXFLAGS'] = "#{cflags*' '} #{SAFE_CFLAGS_FLAGS}"
+    # Defer any truly platform-specific environment building to the
+    # platform driver
+    Platform.setup_build_environment
   end
   
   def deparallelize
@@ -123,34 +75,6 @@ module HomebrewEnvExtension
     append_to_cflags '-Os'
   end
 
-  def gcc_4_0_1
-    self['CC'] = self['LD'] = '/usr/bin/gcc-4.0'
-    self['CXX'] = '/usr/bin/g++-4.0'
-    self.O3
-    remove_from_cflags '-march=core2'
-    remove_from_cflags %r{-msse4(\.\d)?/}
-  end
-  alias_method :gcc_4_0, :gcc_4_0_1
-
-  def gcc_4_2
-    # Sometimes you want to downgrade from LLVM to GCC 4.2
-    self['CC']="/usr/bin/gcc-4.2"
-    self['CXX']="/usr/bin/g++-4.2"
-    self['LD']=self['CC']
-    self.O3
-  end
-
-  def osx_10_4
-    self['MACOSX_DEPLOYMENT_TARGET']="10.4"
-    remove_from_cflags(/ ?-mmacosx-version-min=10\.\d/)
-    append_to_cflags('-mmacosx-version-min=10.4')
-  end
-  def osx_10_5
-    self['MACOSX_DEPLOYMENT_TARGET']="10.5"
-    remove_from_cflags(/ ?-mmacosx-version-min=10\.\d/)
-    append_to_cflags('-mmacosx-version-min=10.5')
-  end
-
   def minimal_optimization
     self['CFLAGS']=self['CXXFLAGS']="-Os #{SAFE_CFLAGS_FLAGS}"
   end
@@ -161,16 +85,7 @@ module HomebrewEnvExtension
   def libxml2
     append_to_cflags ' -I/usr/include/libxml2'
   end
-  def x11
-    opoo "You do not have X11 installed, this formula may not build." if not x11_installed?
-    
-    # CPPFLAGS are the C-PreProcessor flags, *not* C++!
-    append 'CPPFLAGS', '-I/usr/X11R6/include'
-    append 'LDFLAGS', '-L/usr/X11R6/lib'
-    # CMake ignores the variables above
-    append 'CMAKE_PREFIX_PATH', '/usr/X11R6', ':'
-  end
-  alias_method :libpng, :x11
+
   # we've seen some packages fail to build when warnings are disabled!
   def enable_warnings
     remove_from_cflags '-w'
@@ -195,13 +110,6 @@ module HomebrewEnvExtension
   def m32
     append_to_cflags '-m32'
     ENV.append 'LDFLAGS', '-arch i386'
-  end
-
-  # i386 and x86_64 only, no PPC
-  def universal_binary
-    append_to_cflags '-arch i386 -arch x86_64'
-    ENV.O3 if self['CFLAGS'].include? '-O4' # O4 seems to cause the build to fail
-    ENV.append 'LDFLAGS', '-arch i386 -arch x86_64'
   end
 
   def prepend key, value, separator = ' '

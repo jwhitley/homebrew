@@ -16,7 +16,6 @@ HOMEBREW_CACHE=HOMEBREW_PREFIX.parent+"cache"
 HOMEBREW_CELLAR=HOMEBREW_PREFIX.parent+"cellar"
 HOMEBREW_USER_AGENT="Homebrew"
 HOMEBREW_WWW='http://example.com'
-MACOS_VERSION=10.6
 
 (HOMEBREW_PREFIX+'Library'+'Formula').mkpath
 Dir.chdir HOMEBREW_PREFIX

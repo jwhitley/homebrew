@@ -29,14 +29,7 @@ ARGV.extend(HomebrewArgvExtension)
 
 HOMEBREW_VERSION = 0.5
 HOMEBREW_WWW = 'http://bit.ly/Homebrew'
-
-if Process.uid == 0
-  # technically this is not the correct place, this cache is for *all users*
-  # so in that case, maybe we should always use it, root or not?
-  HOMEBREW_CACHE=Pathname.new("/Library/Caches/Homebrew")
-else
-  HOMEBREW_CACHE=Pathname.new("~/Library/Caches/Homebrew").expand_path
-end
+HOMEBREW_CACHE = Platform.cache
 
 if not defined? HOMEBREW_BREW_FILE
   HOMEBREW_BREW_FILE = ENV['HOMEBREW_BREW_FILE'] || `which brew`.chomp
@@ -54,10 +47,7 @@ else
   HOMEBREW_CELLAR = HOMEBREW_REPOSITORY+'Cellar'
 end
 
-MACOS_FULL_VERSION = `/usr/bin/sw_vers -productVersion`.chomp
-MACOS_VERSION = /(10\.\d+)(\.\d+)?/.match(MACOS_FULL_VERSION).captures.first.to_f
-
-HOMEBREW_USER_AGENT = "Homebrew #{HOMEBREW_VERSION} (Ruby #{RUBY_VERSION}-#{RUBY_PATCHLEVEL}; Mac OS X #{MACOS_FULL_VERSION})"
+HOMEBREW_USER_AGENT = "Homebrew #{HOMEBREW_VERSION} (Ruby #{RUBY_VERSION}-#{RUBY_PATCHLEVEL}; #{Platform.identifier})"
 
 
 class ExecutionError <RuntimeError
