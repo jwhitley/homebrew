@@ -11,7 +11,7 @@ require 'pathname'
 HOMEBREW_LIBRARY_PATH = (Pathname.new(__FILE__).realpath.dirname.parent+"Library"+"Homebrew").to_s
 $:.unshift(HOMEBREW_LIBRARY_PATH)
 
-require 'platform'
+require 'platform_factory'
 PlatformFactory.setup
 require 'global'
 

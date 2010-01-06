@@ -24,47 +24,26 @@
 # Platform/OS abstraction layer for Homebrew
 
 module PlatformFactory
-  def self.type
-    @@type
-  end
-
-  def self.platform
-    @@platform
+  def self.current_type
+    @@current_type
   end
 
   def self.setup
-    unless defined? @@type
-      uname_platform = `uname`
+    unless defined? @@current_type
       case `uname`
       when /Darwin/
-        @@type = :macosx
+        @@current_type = :macosx
         require 'macosx/platform'
-        require 'macosx/hardware'
         require 'macosx/beer_events'
       when /Linux/
-        @@type = :linux
+        @@current_type = :linux
         abort 'Linux is not yet supported.'
-      when /CYGWIN_NT\*/
-        @@type = :cygwin
+      when /CYGWIN_NT/
+        @@current_type = :cygwin
         abort 'Cygwin is not yet supported.'
-      when /SunOS/
-        @@type = :solaris
-        abort 'Solaris is not yet supported.'
       end
-    end
-    ::Platform = @@platform
-    ::Hardware = @@hardware
-  end
 
-  class Base
-    REQUIRED_METHODS = %(identifier install_check setup_build_environment)
-
-    REQUIRED_METHODS.each |m|
-      class_eval(<<-EOS, __FILE__, __LINE__+1)
-        def #{m}
-          raise NotImplementedError, "Required method '#{m}' not implemented by #{self.class}"
-        end
-      EOS
+      Platform.setup
     end
   end
 end

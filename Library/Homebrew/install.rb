@@ -34,6 +34,7 @@ at_exit do
     require 'brew.h.rb'
 
     ENV.extend(HomebrewEnvExtension)
+    ENV.extend(Platform::EnvExtension)
     ENV.setup_build_environment
 
     install(Formula.factory($0))

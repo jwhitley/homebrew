@@ -1,6 +1,6 @@
-require 'platform'
+require 'macosx/platform'
 
-module Platform::MacOSXHardware
+module Hardware
   # These methods use info spewed out by sysctl.
   # Look in <mach/machine.h> for decoding info.
 
