@@ -38,9 +38,9 @@ module PlatformFactory
       case `uname`
       when /Darwin/
         @@type = :macosx
-        require 'platform/macosx'
-        @@platform = Platform::MacOSX.new
-        @@hardware = Platform::MacOSXHardware.new
+        require 'macosx/platform'
+        require 'macosx/hardware'
+        require 'macosx/beer_events'
       when /Linux/
         @@type = :linux
         abort 'Linux is not yet supported.'
