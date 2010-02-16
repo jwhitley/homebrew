@@ -47,6 +47,8 @@ module HomebrewEnvExtension
     # Defer any truly platform-specific environment building to the
     # platform driver
     Platform.setup_build_environment
+
+    ENV['CFLAGS'] = ENV['CXXFLAGS'] = "#{Platform.cflags*' '} #{SAFE_CFLAGS_FLAGS}"
   end
   
   def deparallelize

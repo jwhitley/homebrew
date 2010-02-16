@@ -65,18 +65,20 @@ X11 installed? #{x11_installed?}
         
         ENV['CC'] = "#{prefix}/usr/bin/llvm-gcc"
         ENV['CXX'] = "#{prefix}/usr/bin/llvm-g++"
-        cflags = %w{-O4} # link time optimisation baby!
+        @@cflags = %w{-O4} # link time optimisation baby!
       else
         ENV['CC']="gcc-4.2"
         ENV['CXX']="g++-4.2"
-        cflags = ['-O3']
+        @@cflags = ['-O3']
       end
       # in rare cases this may break your builds, as the tool for some reason wants
       # to use a specific linker, however doing this in general causes formula to
       # build more successfully because we are changing CC and many build systems
       # don't react properly to that
       ENV['LD']=ENV['CC']
+    end
 
+    def cflags
       # optimise all the way to eleven, references:
       # http://en.gentoo-wiki.com/wiki/Safe_Cflags/Intel
       # http://forums.mozillazine.org/viewtopic.php?f=12&t=577299
@@ -85,30 +87,30 @@ X11 installed? #{x11_installed?}
         case Hardware.intel_family
         when :penryn, :core2
           # no need to add -mfpmath it happens automatically with 64 bit compiles
-          cflags << "-march=core2"
+          @@cflags << "-march=core2"
         when :core
-          cflags<<"-march=prescott"<<"-mfpmath=sse"
+          @@cflags<<"-march=prescott"<<"-mfpmath=sse"
         end
       else
         case Hardware.intel_family
         when :penryn, :core2
-          cflags<<"-march=nocona"
+          @@cflags<<"-march=nocona"
         when :core
-          cflags<<"-march=prescott"
+          @@cflags<<"-march=prescott"
         end
-        cflags<<"-mfpmath=sse"
+        @@cflags<<"-mfpmath=sse"
       end
-      cflags<<"-mmmx"
+      @@cflags<<"-mmmx"
       case Hardware.intel_family
       when :nehalem
-        cflags<<"-msse4.2"
+        @@cflags<<"-msse4.2"
       when :penryn
-        cflags<<"-msse4.1"
+        @@cflags<<"-msse4.1"
       when :core2, :core
-        cflags<<"-msse3"
+        @@cflags<<"-msse3"
       end
-      
-      ENV['CFLAGS'] = ENV['CXXFLAGS'] = "#{cflags*' '} #{SAFE_CFLAGS_FLAGS}"
+
+      @@cflags
     end
 
     protected
