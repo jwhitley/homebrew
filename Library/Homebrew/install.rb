@@ -1,4 +1,6 @@
 #!/usr/bin/ruby
+require 'platform_factory'
+PlatformFactory.setup
 require 'global'
 
 def text_for_keg_only_formula f
