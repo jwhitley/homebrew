@@ -1,3 +1,4 @@
+require 'rbconfig'
 require 'formula'
 require 'set'
 
@@ -83,7 +84,7 @@ Homebrew does not provide formula for Perl dependencies, cpan does:
       fork do
         begin
           read.close
-          exec '/usr/bin/nice', '/usr/bin/ruby', '-I', File.dirname(__FILE__), '-rinstall', f.path, '--', *ARGV.options
+          exec '/usr/bin/nice', "#{Config::CONFIG['bindir']}/#{Config::CONFIG['ruby_install_name']}", '-I', File.dirname(__FILE__), '-rinstall', f.path, '--', *ARGV.options
         rescue => e
           Marshal.dump(e, write)
           write.close
