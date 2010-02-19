@@ -336,7 +336,7 @@ private
     # I used /tmp rather than mktemp -td because that generates a directory
     # name with exotic characters like + in it, and these break badly written
     # scripts that don't escape strings before trying to regexp them :(
-    tmp=Pathname.new `/usr/bin/mktemp -d /tmp/homebrew-#{name}-#{version}-XXXX`.strip
+    tmp=Pathname.new `mktemp -d /tmp/homebrew-#{name}-#{version}-XXXX`.strip
     raise "Couldn't create build sandbox" if not tmp.directory? or $? != 0
     begin
       wd=Dir.pwd

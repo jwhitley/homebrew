@@ -98,7 +98,7 @@ class Pathname
     out=''
     n=`find #{to_s} -type f | wc -l`.to_i
     out<<"#{n} files, " if n > 1
-    out<<`/usr/bin/du -hd0 #{to_s} | cut -d"\t" -f1`.strip
+    out<<`/usr/bin/du -sh #{to_s} | cut -d"\t" -f1`.strip
   end
 
   # attempts to retrieve the version component of this path, so generally

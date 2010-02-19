@@ -138,7 +138,7 @@ end
 def exec_editor *args
   editor=ENV['EDITOR']
   if editor.nil?
-    if system "/usr/bin/which -s mate"
+    if system "/usr/bin/which mate 2>&1 /dev/null"
       editor='mate'
     else
       editor='/usr/bin/vim'

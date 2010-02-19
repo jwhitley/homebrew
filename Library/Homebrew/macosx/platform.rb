@@ -113,6 +113,38 @@ X11 installed? #{x11_installed?}
       @@cflags
     end
 
+    def macports_or_fink_installed?
+      # See these issues for some history:
+      # http://github.com/mxcl/homebrew/issues/#issue/13
+      # http://github.com/mxcl/homebrew/issues/#issue/41
+      # http://github.com/mxcl/homebrew/issues/#issue/48
+
+      %w[port fink].each do |ponk|
+        if system "/usr/bin/which -s #{ponk}"
+          return ponk
+        end
+      end
+
+      # we do the above check because macports can be relocated and fink may be
+      # able to be relocated in the future. This following check is because if
+      # fink and macports are not in the PATH but are still installed it can
+      # *still* break the build -- because some build scripts hardcode these paths:
+      %w[/sw/bin/fink /opt/local/bin/port].each do |ponk|
+        return ponk if File.exist? ponk
+      end
+
+      # finally, sometimes people make their MacPorts or Fink read-only so they
+      # can quickly test Homebrew out, but still in theory obey the README's 
+      # advise to rename the root directory. This doesn't work, many build scripts
+      # error out when they try to read from these now unreadable directories.
+      %w[/sw /opt/local].each do |path|
+        path = Pathname.new(path)
+        return path if path.exist? and not path.readable?
+      end
+      
+      false
+    end
+
     protected
     def llvm_build
       if MACOS_VERSION >= 10.6

@@ -37,7 +37,7 @@ module PlatformFactory
         require 'macosx/beer_events'
       when /Linux/
         @@current_type = :linux
-        abort 'Linux is not yet supported.'
+        require 'linux/platform'
       when /CYGWIN_NT/
         @@current_type = :cygwin
         abort 'Cygwin is not yet supported.'
